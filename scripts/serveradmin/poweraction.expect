@@ -6,6 +6,9 @@
 # Expect script to talk to Dell's RACADM on a DRAC card and power up/down
 # the machine. Hand it one of the server actions below.
 #
+# The 'sysadmin' user must exist on the DRAC card for this to work in its
+# current incarnation.
+#
 ###############################################################################
 #
 # serveraction:
@@ -15,6 +18,15 @@
 # powercycle      - perform server power cycle
 # hardreset       - force hard server power reset
 # powerstatus     - display current power status of server
+#
+###############################################################################
+#
+# TODO:
+#
+#   * Adjust to use user account specified in the password file, as in:
+#     user:password
+#   * Encrypt the contents of racadm.pwd
+#   * Clean up the switch{} section and make it more modular
 #
 ###############################################################################
 
@@ -32,7 +44,6 @@ if { [llength $argv] < 2} {
 }
 
 # if the password file exists, read the password from it
-# todo: modify this to include the username
 if { [file exists $pwdfile] } {
     set f [open $pwdfile]
     set password [read $f]]
@@ -45,7 +56,7 @@ if { [file exists $pwdfile] } {
 # do what we're asked to
 switch $action {
     default {
-        spawn ssh root@$host
+        spawn ssh sysadmin@$host
 
         expect "password*"
         send "$password\r"
