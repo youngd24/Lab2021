@@ -3,8 +3,12 @@
 #
 # poweraction.expect
 #
-# Expect script to talk to Dell's RACADM on a DRAC card and power up/down
-# the machine. Hand it one of the server actions below.
+# Expect script to power up/down/off a Dell server using either the DRAC 
+# racadm command or the ssh console poweroff command.
+#
+#  - powerup: use DRAC to bring the machine to life
+#  - poweroff: use SSH to ESX to gracefully bring down the machine
+#  - powerdownfuckit: use DRAC to pull the cords from the box
 #
 # The 'sysadmin' user must exist on the DRAC card for this to work in its
 # current incarnation.
@@ -32,15 +36,24 @@
 ###############################################################################
 
 # Set some variables
-set timeout 60                      # command timeout
-set homedir $::env(HOME)            # get $HOME from environment
-set pwdfile $homedir/racadm.pwd     # password to use for authentication
-set host [lindex $argv 0]           # the hostname to connect to
-set action [lindex $argv 1]         # the action to perform
+set timeout 60
+set homedir $::env(HOME)
+set pwdfile $homedir/racadm.pwd
+set host [lindex $argv 0]
+set action [lindex $argv 1]
 
 # Make sure they gave us an action to perform
 if { [llength $argv] < 2} {
-    puts "usage: serveraction <host> <action>"
+    puts ""
+    puts "poweraction.expect"
+    puts "Expect script to power up/down/off a Dell server"
+    puts ""
+    puts "Usage: serveraction <host> <action>"
+    puts "where <action> is one of:"
+    puts "  powerup: use DRAC to bring the machine to life"
+    puts "  poweroff: use SSH to ESX to gracefully bring down the machine"
+    puts "  powerdownfuckit: use DRAC to pull the cords from the box"
+    puts ""
     exit 1
 }
 
@@ -56,14 +69,47 @@ if { [file exists $pwdfile] } {
 
 # do what we're asked to
 switch $action {
-    default {
-        spawn ssh sysadmin@$host
+
+    powerup {
+        spawn ssh sysadmin@$host-drac
 
         expect "password*"
         send "$password\r"
 
         expect "$*"
-        send "racadm serveraction $action\r"
+        send "racadm serveraction powerup\r"
+
+        expect "$*"
+        send "exit\r"
+
+        expect eof
+        exit
+    }
+
+    poweroff {
+        spawn ssh sysadmin@$host
+
+        expect "Password:*"
+        send "$password\r"
+
+        expect "*esx*"
+        send "poweroff\r"
+
+        expect "*esx*"
+        send "exit\r"
+
+        expect eof
+        exit
+    }
+
+    powerdownfuckit {
+        spawn ssh sysadmin@$host-drac
+
+        expect "password*"
+        send "$password\r"
+
+        expect "$*"
+        send "racadm serveraction powerdown\r"
 
         expect "$*"
         send "exit\r"
