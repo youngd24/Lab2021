@@ -1,0 +1,54 @@
+#!/usr/bin/expect -f
+
+# serveraction: 
+#
+# powerdown       - power server off
+# powerup         - power server on
+# powercycle      - perform server power cycle
+# hardreset       - force hard server power reset
+# powerstatus     - display current power status of server
+
+# Set some variables
+set timeout -1
+set homedir $::env(HOME)
+set pwdfile $homedir/racadm.pwd
+set host [lindex $argv 0]
+set action [lindex $argv 1]
+
+# Make sure they gave us an action to perform
+if { [llength $argv] < 2} {
+    puts "usage: serveraction <host> <action>"
+    exit 1
+}
+
+# if the password file exists, read the password from it
+# todo: modify this to include the username
+if { [file exists $pwdfile] } {
+    set f [open $pwdfile]
+    set password [read $f]]
+    close $f
+} else {
+    puts "pwdfile: $pwdfile does not exist"
+    exit 1
+}
+
+
+# do what we're asked to
+switch $action {
+    default {
+        spawn ssh root@$host
+
+        expect "password*"
+        send "$password\r"
+
+        expect "$*"
+        send "racadm serveraction $action\r"
+
+        expect "$*"
+        send "exit\r"
+
+        expect eof
+        exit
+    }
+}
+
