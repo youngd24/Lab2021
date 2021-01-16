@@ -11,7 +11,8 @@
 #
 ###############################################################################
 #
-# serveraction:
+# VALID ACTIONS:
+# (Dell racadm serveraction)
 #
 # powerdown       - power server off
 # powerup         - power server on
@@ -31,11 +32,11 @@
 ###############################################################################
 
 # Set some variables
-set timeout 60
-set homedir $::env(HOME)
-set pwdfile $homedir/racadm.pwd
-set host [lindex $argv 0]
-set action [lindex $argv 1]
+set timeout 60                      # command timeout
+set homedir $::env(HOME)            # get $HOME from environment
+set pwdfile $homedir/racadm.pwd     # password to use for authentication
+set host [lindex $argv 0]           # the hostname to connect to
+set action [lindex $argv 1]         # the action to perform
 
 # Make sure they gave us an action to perform
 if { [llength $argv] < 2} {
